@@ -7,13 +7,14 @@
 
 # P2P - Comunicación entre Procesos
 #
-# 1. breve descripción de la actividad
+# 1. Breve descripción de la actividad
+Creación de una red P2P que permite a los peers subir y descargar archivos. La comunicación se da por medio de API REST y RPC
 #
 <texto descriptivo>
 ## 1.1. Que aspectos cumplió o desarrolló de la actividad propuesta por el profesor (requerimientos funcionales y no funcionales)
-
+Se desarrolló el pclient, sus respectivos pservers y el servidor. Además se implementaron los métodos de upload_file y download_file
 ## 1.2. Que aspectos NO cumplió o desarrolló de la actividad propuesta por el profesor (requerimientos funcionales y no funcionales)
-
+El server se inicia correctamente, pero en el momento de que los peers hagan el respectivo log in, se produce un error para encontrar las credenciales del pserver.
 # 2. información general de diseño de alto nivel, arquitectura, patrones, mejores prácticas utilizadas.
 
 # 3. Descripción del ambiente de desarrollo y técnico: lenguaje de programación, librerias, paquetes, etc, con sus numeros de versiones.
