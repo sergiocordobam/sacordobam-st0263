@@ -13,7 +13,7 @@ from threading import Thread
 
 app = Flask(__name__)
 
-env_path = os.path.join(os.path.dirname(__file__), sys.argv[2])
+env_path = os.path.join(os.path.dirname(__file__), sys.argv[1])
 dotenv.load_dotenv(dotenv_path=env_path)
 
 SERVER_URL = os.getenv("SERVER_URL")
@@ -26,6 +26,8 @@ files = []
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    print("PServer Port:", PSERVER_PORT)
+    print("PServer URL:", PSERVER_URL)
     server.add_insecure_port(f"{PSERVER_URL}:{PSERVER_PORT}")
     pserver_pb2_grpc.add_PServerServicer_to_server(PServerServicer(), server)
     server.start()
@@ -34,12 +36,13 @@ def serve():
 def login(pclient_data):
     username = pclient_data.get("username")
     password = pclient_data.get("password")
-    url = f"{SERVER_URL}:{SERVER_PORT}"
+    url = f"{PSERVER_URL}:{PSERVER_PORT}"
     pserver_data = {
         "username": username,
         "password": password,
+        "url": url
     }
-    response = requests.post(f"http//{PSERVER_URL}:{PSERVER_PORT}/login", json=pserver_data)
+    response = requests.post(f"http://{SERVER_URL}:{SERVER_PORT}/login", json=pserver_data)
     return response
 
 def upload_file(file_name):
@@ -48,7 +51,7 @@ def upload_file(file_name):
         "file_name": file_name,
         "url": url
     }
-    response = requests.post(f"http//{PSERVER_URL}:{PSERVER_PORT}/upload_file", json=pserver_data)
+    response = requests.post(f"http://{SERVER_URL}:{SERVER_PORT}/upload_file", json=pserver_data)
     return response
 
 def download_file(file_name):
@@ -56,13 +59,13 @@ def download_file(file_name):
     pserver_data = {
         "file_name": file_name,
     }
-    response = requests.post(f"http//{PSERVER_URL}:{PSERVER_PORT}/download_file", json=pserver_data)
+    response = requests.post(f"http://{SERVER_URL}:{SERVER_PORT}/download_file", json=pserver_data)
     return response
 
 def ping():
     global ping_status
     while ping_status:
-        response = requests.get(f"http//{PSERVER_URL}:{PSERVER_PORT}/ping", json={"url": f"{SERVER_URL}:{SERVER_PORT}"})
+        response = requests.get(f"http://{PSERVER_URL}:{PSERVER_PORT}/ping", json={"url": f"{SERVER_URL}:{SERVER_PORT}"})
         time.sleep(5)
 
 def send_index():
@@ -70,7 +73,7 @@ def send_index():
         "files": files,
         "url": f"{SERVER_URL}:{SERVER_PORT}"
     }
-    response = requests.post(f"http//{PSERVER_URL}:{PSERVER_PORT}/index", json=pserver_data)
+    response = requests.post(f"http://{PSERVER_URL}:{PSERVER_PORT}/index", json=pserver_data)
     return response
 
 class PServerServicer(pserver_pb2_grpc.PServerServicer):
@@ -83,7 +86,7 @@ class PServerServicer(pserver_pb2_grpc.PServerServicer):
 
     def Logout(self, request, context):
         username = request.username
-        response = requests.post(f"http//{PSERVER_URL}:{PSERVER_PORT}/logout", json={"username": username})
+        response = requests.post(f"http://{PSERVER_URL}:{PSERVER_PORT}/logout", json={"username": username})
         return pserver_pb2.Response(status_code=response.status_code)
 
     def DownloadFileRequest(self, request, file_name, context):
@@ -92,13 +95,16 @@ class PServerServicer(pserver_pb2_grpc.PServerServicer):
             "file_name": file_name,
             "url": url
         }
-        response = requests.post(f"http//{PSERVER_URL}:{PSERVER_PORT}/download_file", json=pserver_data)
+        response = requests.post(f"http://{PSERVER_URL}:{PSERVER_PORT}/download_file", json=pserver_data)
         return pserver_pb2.Response(status_code=response.status_code)
 
     def DownloadFile(self, request, context):
         file_name = request.file_name
         response = download_file(file_name)
-        return pserver_pb2.Response(status_code=response.status_code)
+        if response.status_code == 200:
+            return pserver_pb2.Response(status_code=response.status_code, file_content=response.content)
+        else:
+            return pserver_pb2.Response(status_code=response.status_code)
 
     def UploadFileRequest(self, request, context):
         file_name = request.file_name

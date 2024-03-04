@@ -6,7 +6,7 @@ import dotenv
 import grpc
 import pserver_pb2
 import pserver_pb2_grpc
-from pserver import pserver
+from pserver import serve
 
 env_path = os.path.join(os.path.dirname(__file__), sys.argv[1])
 dotenv.load_dotenv(dotenv_path=env_path)
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     pserver_stub = pserver_pb2_grpc.PServerStub(pserver_channel)
     username = login(pserver_stub)
     print("Username:", username)
-    pserver_thread = Thread(target=pserver.serve)
+    pserver_thread = Thread(target=serve)
     pserver_thread.start()
     while True:
         print("Choose an option:")
